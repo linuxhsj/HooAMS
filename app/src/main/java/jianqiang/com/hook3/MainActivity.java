@@ -8,14 +8,12 @@ import android.view.View;
 import android.widget.Button;
 
 import jianqiang.com.hook3.hook.AMSHookHelper;
+import jianqiang.com.hook3.hook.HookUtil;
 
 public class MainActivity extends Activity {
-
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(newBase);
-
-
         if (android.os.Build.VERSION.SDK_INT <= 28) {
             try {
                 AMSHookHelper.hookAMN();
@@ -23,10 +21,17 @@ public class MainActivity extends Activity {
             } catch (Throwable throwable) {
                 throw new RuntimeException("hook failed", throwable);
             }
-        }else{//android 10以后
+        }else if (android.os.Build.VERSION.SDK_INT <= 30){//android 10、android11
             try {
                 HookUtil.hookAMS();
                 HookUtil.hookHandler();
+            } catch (Throwable throwable) {
+                throw new RuntimeException("hook failed", throwable);
+            }
+        }else{//android 12以后
+            try {
+                HookUtil.hookAMS();
+                HookUtil.attachContext();
             } catch (Throwable throwable) {
                 throw new RuntimeException("hook failed", throwable);
             }

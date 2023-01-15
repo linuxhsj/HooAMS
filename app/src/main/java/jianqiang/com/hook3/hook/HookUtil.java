@@ -1,5 +1,6 @@
-package jianqiang.com.hook3;
+package jianqiang.com.hook3.hook;
 
+import android.app.Instrumentation;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
@@ -9,10 +10,14 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
+
+import jianqiang.com.hook3.RefInvoke;
+import jianqiang.com.hook3.StubActivity;
+
 //https://www.jianshu.com/p/023f79c4e75e
 public class HookUtil {
 
-    private static final String TARGET_INTENT = "target_intent";
+    public static final String TARGET_INTENT = "target_intent";
 
     // 使用代理的Activity替换需要启动的未注册的Activity
     public static void hookAMS() {
@@ -95,6 +100,8 @@ public class HookUtil {
 
                 @Override
                 public boolean handleMessage(Message msg) {
+
+                    System.err.println("linux###msg.what="+msg.what);
                     switch (msg.what) {
                         case 159:
                             // msg.obj = ClientTransaction
@@ -121,6 +128,7 @@ public class HookUtil {
 
                                         // 获取启动插件的 Intent，并替换回来
                                         Intent intent = proxyIntent.getParcelableExtra(TARGET_INTENT);
+                                        System.err.println("linux###intent="+intent);
                                         if (intent != null) {
                                             mIntentField.set(launchActivityItem, intent);
                                         }
@@ -138,5 +146,20 @@ public class HookUtil {
             e.printStackTrace();
         }
 
+    }
+
+
+    public static void attachContext() throws Exception{
+        // 先获取到当前的ActivityThread对象
+        Object currentActivityThread = RefInvoke.invokeStaticMethod("android.app.ActivityThread", "currentActivityThread");
+
+        // 拿到原始的 mInstrumentation字段
+        Instrumentation mInstrumentation = (Instrumentation) RefInvoke.getFieldObject(currentActivityThread, "mInstrumentation");
+
+        // 创建代理对象
+        Instrumentation evilInstrumentation = new EvilInstrumentation(mInstrumentation);
+
+        // 偷梁换柱
+        RefInvoke.setFieldObject(currentActivityThread, "mInstrumentation", evilInstrumentation);
     }
 }
